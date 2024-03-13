@@ -25,11 +25,11 @@ OLED: https://randomnerdtutorials.com/esp32-ssd1306-oled-display-arduino-ide/
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET    -1
 
-#include "SECRECTS.h"
+#include "arduino_secrets.h"
 
 //Stuff needed to get the time
-const char* ssid = SECRECT_SSID;
-const char* password = SECRECT_PSW;
+const char* ssid = SECRECTSSID;
+const char* password = SECRECTPSW;
 
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = -21600;

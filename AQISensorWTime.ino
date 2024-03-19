@@ -31,6 +31,12 @@ OLED: https://randomnerdtutorials.com/esp32-ssd1306-oled-display-arduino-ide/
 //SparkFun AQI Sensor
 #include "SparkFun_ENS160.h"
 
+//adafruit AHT20
+#include <Adafruit_AHTX0.h>
+Adafruit_AHTX0 aht;
+float temperature = 0;
+float humidityA = 0;
+
 //Stuff needed to get the time
 const char* ssid = SECRET_SSID;
 const char* password = SECRET_PSWD;
@@ -80,8 +86,9 @@ void setup() {
   wifiConnection();
   setupSD();
   pinMode(AQIpin, INPUT); // setup the AQI sensor pin
-  displaySetup();
+  aht.begin();
   ensSetup();
+  displaySetup();
 }
 
 void loop() {
@@ -108,8 +115,8 @@ void loop() {
     printLocalTime(); //update the time to be current
     appendFile(SD, fileName.c_str(), timeString.c_str()); //Add the time to the file as a string
     appendFile(SD, fileName.c_str(), ",");
-    String Temp = String(concentration); //Convert the reading from a float to a string
-    appendFile(SD, fileName.c_str(), Temp.c_str());
+    String TempCON = String(concentration); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempCON.c_str());
 
     
 
@@ -140,11 +147,25 @@ void loop() {
     String TempPPM = String(ppm); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempPPM.c_str()); //Add the CO2 to the file as a string
     appendFile(SD, fileName.c_str(), ",");
-    appendFile(SD, fileName.c_str(), "\n");
 
 	  Serial.print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ");
     flags = myENS.getFlags();
     Serial.println(flags);
+
+    sensors_event_t humidity, temp;
+    aht.getEvent(&humidity, &temp);
+    Serial.print("Temperature: "); Serial.print(temp.temperature); Serial.println(" degrees C");
+    Serial.print("Humidity: "); Serial.print(humidity.relative_humidity); Serial.println("% rH");
+
+    String TempTemp = String(temp.temperature); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempTemp.c_str()); //Add the CO2 to the file as a string
+    appendFile(SD, fileName.c_str(), ",");
+
+    String TempRH = String(humidity.relative_humidity); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempRH.c_str()); //Add the CO2 to the file as a string
+    appendFile(SD, fileName.c_str(), ",");
+
+    appendFile(SD, fileName.c_str(), "\n");
 
     displayUpdate();  //Update the OLED display
 		Serial.println();
@@ -194,7 +215,7 @@ void setupSD(){
     Serial.println("no Card");
   }
 
-  appendFile(SD, fileName.c_str(), "Time, Concentration, AQI, TVOC, CO2,\n");
+  appendFile(SD, fileName.c_str(), "Time, Concentration, AQI, TVOC, CO2, *C, %RH\n");
 
 }
 
@@ -224,12 +245,14 @@ void ensSetup(){
   ensStatus = myENS.getFlags();
 	Serial.print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ");
 	Serial.println(ensStatus);
-}
 
-
-//Take a reading from the sensor
-void takeReading(){
-
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
+  temperature = temp.temperature;
+  humidityA = humidity.relative_humidity;
+  // Give values to Air Quality Sensor. 
+  myENS.setTempCompensationCelsius(temperature); 
+  myENS.setRHCompensationFloat(humidityA); 
 }
 
 //get the current time and put it onto the global time string
@@ -246,17 +269,6 @@ void printLocalTime()
   timeString = time;
   //Serial.println(time);
   return;
-}
-
-//Write the current time string and the given value to the file
-void writeToFile(){
-  myFile = SD.open(fileName, FILE_WRITE);
-  myFile.seek(0);
-  myFile.print(timeString);
-  myFile.print(", ");
-  myFile.println(concentration);
-  myFile.close();
-  Serial.println("printed to file.");
 }
 
 //update the OLED display

@@ -25,11 +25,15 @@ OLED: https://randomnerdtutorials.com/esp32-ssd1306-oled-display-arduino-ide/
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET    -1
 
+//Password and stuff
 #include "arduino_secrets.h"
 
+//SparkFun AQI Sensor
+#include "SparkFun_ENS160.h"
+
 //Stuff needed to get the time
-const char* ssid = SECRECTSSID;
-const char* password = SECRECTPSW;
+const char* ssid = SECRET_SSID;
+const char* password = SECRET_PSWD;
 
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = -21600;
@@ -59,9 +63,17 @@ int numMeasurments = 1;
 int goodValues = 0;
 float avg = 0;
 
+//ENS stuff
+SparkFun_ENS160 myENS; 
+int ensStatus;
+int ppb = 0;
+int ppm = 0;
+int aqi = 0;
+int flags = 0;
 
 void setup() {
   // put your setup code here, to run once:
+  Wire.begin();
   Serial.begin(115200); //Create a serial output for debugging
   Serial.println();
   Serial.println("Begin");
@@ -69,22 +81,10 @@ void setup() {
   setupSD();
   pinMode(AQIpin, INPUT); // setup the AQI sensor pin
   displaySetup();
+  ensSetup();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  /*
-  take a reading
-  update the time string
-  Write the reading to the file
-  add to the total number of readings
-  Check the reading
-    if it is good,
-      add to the number of good values
-      get the current average reading
-    else
-      add to the number of bad values
-  */
   duration = pulseIn(AQIpin, LOW);
   lowpulseoccupancy = lowpulseoccupancy+duration;
 
@@ -106,24 +106,48 @@ void loop() {
     Serial.print("Concentration: ");
     Serial.println(concentration);  // this seems block for 30 seconds so no delay is needed
     printLocalTime(); //update the time to be current
-    //writeToFile();    //add the new reading to the file with the time
-    //myFile = SD.open(fileName, FILE_WRITE);
-    //char dataString = timeString.c_str() +  ", " + concentration + "\n";
-    appendFile(SD, fileName.c_str(), timeString.c_str());
+    appendFile(SD, fileName.c_str(), timeString.c_str()); //Add the time to the file as a string
     appendFile(SD, fileName.c_str(), ",");
-    String Temp = String(concentration);
+    String Temp = String(concentration); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), Temp.c_str());
+
+    
+
+    //Print AQI Stuff
+    Serial.print("Air Quality Index (1-5) : ");
+    aqi = myENS.getAQI();
+		Serial.println(aqi);
+
+    String TempAQI = String(aqi); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempAQI.c_str()); //Add the aqi to the file as a string
+    appendFile(SD, fileName.c_str(), ",");
+
+		Serial.print("Total Volatile Organic Compounds: ");
+    ppb = myENS.getTVOC();
+		Serial.print(ppb);
+		Serial.println("ppb");
+    
+    String TempPPB = String(ppb); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempPPB.c_str()); //Add the TVOC to the file as a string
+    appendFile(SD, fileName.c_str(), ",");
+
+
+		Serial.print("CO2 concentration: ");
+    ppm = myENS.getECO2();
+		Serial.print(ppm);
+		Serial.println("ppm");
+
+    String TempPPM = String(ppm); //Convert the reading from a float to a string
+    appendFile(SD, fileName.c_str(), TempPPM.c_str()); //Add the CO2 to the file as a string
+    appendFile(SD, fileName.c_str(), ",");
     appendFile(SD, fileName.c_str(), "\n");
-    /*
-    myFile.seek(0);
-    myFile.print(timeString);
-    myFile.print(',' );
-    myFile.print(concentration);
-    myFile.print('\n');
-    myFile.close();
-    Serial.println("printed to file.");
-    */
+
+	  Serial.print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ");
+    flags = myENS.getFlags();
+    Serial.println(flags);
+
     displayUpdate();  //Update the OLED display
+		Serial.println();
   }
 
 }
@@ -162,6 +186,7 @@ void setupSD(){
   Serial.print("File Name: ");
   Serial.println(fileName);
   myFile = SD.open("fileName.txt", FILE_WRITE);
+  myFile.close();
 
   //Make sure the card is there
   uint8_t cardType = SD.cardType();
@@ -169,16 +194,8 @@ void setupSD(){
     Serial.println("no Card");
   }
 
-  //Add a heading line to the file
-  if (myFile){
-    Serial.println("Creating file...");
-    myFile = SD.open(fileName, FILE_WRITE);
-    myFile.print("test");
-    myFile.print("time, reading");
-    myFile.close();
-  } else {
-    Serial.println("Failed to create file");
-  }
+  appendFile(SD, fileName.c_str(), "Time, Concentration, AQI, TVOC, CO2,\n");
+
 }
 
 //setup the display and print out a ready message
@@ -192,6 +209,21 @@ void displaySetup(){
   display.println("Ready!");
   display.display();
   Serial.println("Screen setup done.");
+}
+
+void ensSetup(){
+  if( !myENS.begin() )
+	{
+		Serial.println("Could not communicate with the ENS160, check wiring.");
+		while(1);
+	}
+  if( myENS.setOperatingMode(SFE_ENS160_RESET) )
+  Serial.println("Ready.");
+	delay(100);
+	myENS.setOperatingMode(SFE_ENS160_STANDARD);
+  ensStatus = myENS.getFlags();
+	Serial.print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ");
+	Serial.println(ensStatus);
 }
 
 
@@ -233,15 +265,15 @@ void displayUpdate(){
   display.setTextColor(WHITE);
   display.clearDisplay();
   display.setCursor(0,0);
-  display.print("Val:");
+  display.print("2.5:");
   display.println(concentration);
   display.print("Avg:");
   display.println(avg);
-  //display.print("Num:");
-  //display.println(numMeasurments);
-  //display.println("==========");
-  display.print("% OK:");
-  display.print(goodValues / numMeasurments * (100.0));
+  display.print("VOC:");
+  display.println(ppb);
+  display.print("CO2:");
+  display.println(ppm);
+
   display.display();
 }
 

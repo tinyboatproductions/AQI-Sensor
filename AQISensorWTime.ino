@@ -84,7 +84,7 @@ void setup() {
   Serial.println();
   Serial.println("Begin");
   wifiConnection();
-  setupSD();
+  setupSD(); // MUST BE FORMATED FAT NOT FAT32
   pinMode(AQIpin, INPUT); // setup the AQI sensor pin
   aht.begin();
   ensSetup();
@@ -117,14 +117,12 @@ void loop() {
     appendFile(SD, fileName.c_str(), ",");
     String TempCON = String(concentration); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempCON.c_str());
-
-    
+    appendFile(SD, fileName.c_str(), ",");
 
     //Print AQI Stuff
     Serial.print("Air Quality Index (1-5) : ");
     aqi = myENS.getAQI();
 		Serial.println(aqi);
-
     String TempAQI = String(aqi); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempAQI.c_str()); //Add the aqi to the file as a string
     appendFile(SD, fileName.c_str(), ",");
@@ -133,7 +131,6 @@ void loop() {
     ppb = myENS.getTVOC();
 		Serial.print(ppb);
 		Serial.println("ppb");
-    
     String TempPPB = String(ppb); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempPPB.c_str()); //Add the TVOC to the file as a string
     appendFile(SD, fileName.c_str(), ",");
@@ -143,7 +140,6 @@ void loop() {
     ppm = myENS.getECO2();
 		Serial.print(ppm);
 		Serial.println("ppm");
-
     String TempPPM = String(ppm); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempPPM.c_str()); //Add the CO2 to the file as a string
     appendFile(SD, fileName.c_str(), ",");
@@ -156,11 +152,9 @@ void loop() {
     aht.getEvent(&humidity, &temp);
     Serial.print("Temperature: "); Serial.print(temp.temperature); Serial.println(" degrees C");
     Serial.print("Humidity: "); Serial.print(humidity.relative_humidity); Serial.println("% rH");
-
     String TempTemp = String(temp.temperature); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempTemp.c_str()); //Add the CO2 to the file as a string
     appendFile(SD, fileName.c_str(), ",");
-
     String TempRH = String(humidity.relative_humidity); //Convert the reading from a float to a string
     appendFile(SD, fileName.c_str(), TempRH.c_str()); //Add the CO2 to the file as a string
     appendFile(SD, fileName.c_str(), ",");
@@ -256,8 +250,7 @@ void ensSetup(){
 }
 
 //get the current time and put it onto the global time string
-void printLocalTime()
-{
+void printLocalTime(){
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
     Serial.println("Failed to obtain time");

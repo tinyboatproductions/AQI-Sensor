@@ -20,10 +20,10 @@ The OLED screen will allow for quick referance of the current reading as well as
 - [ ] Arange the code so the screen is setup first and outputs any errors
 
 ## Parts
-- ESP32
-- Grove Dust sensor
-- SD Card Module for Arduino
-- 64x128 OLED
-- ENS160 from Sparkfun
-- AHT20 from Adafruit
+- [ESP32](https://www.amazon.com/gp/product/B08246MCL5/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&th=1)
+- [Grove Dust sensor](https://www.seeedstudio.com/Grove-Dust-Sensor-PPD42NS.html)
+- [SD Card Module for Arduino](https://www.amazon.com/gp/product/B07BJ2P6X6/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1)
+- [64x128 OLED](https://www.amazon.com/gp/product/B085WCRS7C/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1)
+- [ENS160 from Sparkfun](https://www.sparkfun.com/products/20844)
+- [AHT20 from Adafruit](https://www.adafruit.com/product/4566)
 

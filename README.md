@@ -12,9 +12,9 @@ The data will all be logged in a text file on an SD card attached to the module.
 The OLED screen will allow for quick referance of the current reading as well as the average reading over the whole measurment time. 
 
 ## To Do
-- [ ] Remove extra code
+- [X] Remove extra code
 - [X] Clean up the OLED output
-- [ ] Data processing code
+- [ ] ~~Data processing code~~
 - [X] Wiring diagram
 - [X] Make a case
 - [ ] Arange the code so the screen is setup first and outputs any errors

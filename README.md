@@ -27,3 +27,7 @@ The OLED screen will allow for quick referance of the current reading as well as
 - [ENS160 from Sparkfun](https://www.sparkfun.com/products/20844)
 - [AHT20 from Adafruit](https://www.adafruit.com/product/4566)
 
+## Links To More Info
+- Video: https://youtu.be/t2bbnQ1g2lM
+- Instructable: https://www.instructables.com/Air-Quality-Monitor-2/
+- Printables: https://www.printables.com/model/895121-air-quailty-monitor-case
